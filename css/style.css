@@ -1,0 +1,313 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+  color: #172b4d;
+  background: #f4f5f7;
+}
+
+/* ── Layout ── */
+.container {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+/* ── Cards / Panels ── */
+.card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.12);
+}
+
+.card h2 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #172b4d;
+}
+
+.card h3 {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #5e6c84;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+
+/* ── Form Elements ── */
+label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #5e6c84;
+  margin-bottom: 4px;
+  margin-top: 10px;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+}
+
+input[type="text"],
+input[type="password"],
+select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 2px solid #dfe1e6;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #172b4d;
+  background: #fafbfc;
+  transition: border-color .15s;
+  outline: none;
+}
+
+input:focus,
+select:focus {
+  border-color: #0052cc;
+  background: #fff;
+}
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s, transform .1s;
+  text-decoration: none;
+}
+
+.btn:active { transform: scale(.97); }
+
+.btn-primary   { background: #0052cc; color: #fff; }
+.btn-primary:hover   { background: #0065ff; }
+
+.btn-success   { background: #00875a; color: #fff; }
+.btn-success:hover   { background: #006644; }
+
+.btn-danger    { background: #de350b; color: #fff; }
+.btn-danger:hover    { background: #bf2600; }
+
+.btn-warning   { background: #ff991f; color: #fff; }
+.btn-warning:hover   { background: #e08000; }
+
+.btn-secondary { background: #f4f5f7; color: #172b4d; border: 1px solid #dfe1e6; }
+.btn-secondary:hover { background: #e4e6ea; }
+
+.btn-ghost     { background: transparent; color: #0052cc; padding: 6px 10px; }
+.btn-ghost:hover     { background: #e9f0ff; }
+
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn-lg { padding: 10px 20px; font-size: 15px; width: 100%; justify-content: center; }
+
+.btn-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+/* ── Habit Score Buttons ── */
+.habit-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.habit-actions span {
+  flex: 1;
+  font-size: 13px;
+  color: #5e6c84;
+}
+
+.btn-habit-up   { background: #00875a; color: #fff; font-size: 18px; width: 40px; height: 40px; padding: 0; justify-content: center; border-radius: 50%; }
+.btn-habit-down { background: #de350b; color: #fff; font-size: 18px; width: 40px; height: 40px; padding: 0; justify-content: center; border-radius: 50%; }
+
+/* ── Stats Bar ── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.stat-item {
+  background: #f4f5f7;
+  border-radius: 6px;
+  padding: 10px 12px;
+}
+
+.stat-item .stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #5e6c84;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+}
+
+.stat-item .stat-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: #172b4d;
+  margin-top: 2px;
+}
+
+.stat-hp   .stat-value { color: #de350b; }
+.stat-xp   .stat-value { color: #ff991f; }
+.stat-gold .stat-value { color: #c0811a; }
+.stat-lvl  .stat-value { color: #0052cc; }
+
+/* ── Progress Bar ── */
+.progress-wrap {
+  margin-top: 6px;
+}
+
+.progress-wrap .progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #5e6c84;
+  margin-bottom: 3px;
+}
+
+.progress-bar {
+  height: 8px;
+  background: #dfe1e6;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width .4s ease;
+}
+
+.progress-hp   .progress-fill { background: #de350b; }
+.progress-xp   .progress-fill { background: #ff991f; }
+
+/* ── Status badges ── */
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.badge-todo    { background: #e3fcef; color: #006644; }
+.badge-daily   { background: #e6f0ff; color: #0747a6; }
+.badge-habit   { background: #fff0b3; color: #172b4d; }
+.badge-synced  { background: #e3fcef; color: #006644; }
+.badge-pending { background: #fffae6; color: #172b4d; }
+
+/* ── Divider ── */
+hr {
+  border: none;
+  border-top: 1px solid #dfe1e6;
+  margin: 14px 0;
+}
+
+/* ── Notifications ── */
+#notification {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(60px);
+  background: #172b4d;
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  z-index: 9999;
+  opacity: 0;
+  transition: opacity .25s, transform .25s;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+#notification.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+#notification.success { background: #00875a; }
+#notification.error   { background: #de350b; }
+#notification.info    { background: #0052cc; }
+
+/* ── Section Headers ── */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+/* ── Task Item (index.html dashboard) ── */
+.task-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: #f4f5f7;
+  border-radius: 6px;
+  margin-bottom: 6px;
+}
+
+.task-item .task-title {
+  font-size: 13px;
+  font-weight: 500;
+  flex: 1;
+  margin: 0 8px;
+}
+
+.task-item .task-check {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #00875a;
+}
+
+/* ── Loading Spinner ── */
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255,255,255,.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  vertical-align: middle;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Power-Up iframe tweaks ── */
+.powerup-body {
+  background: #fff;
+  overflow-x: hidden;
+}
+
+/* ── Hidden ── */
+.hidden { display: none !important; }
+
+/* ── Responsive ── */
+@media (max-width: 360px) {
+  .stats-grid { grid-template-columns: 1fr; }
+  .btn-group  { flex-direction: column; }
+}

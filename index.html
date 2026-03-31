@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Habitica × Trello — Dashboard</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div class="container" style="max-width:520px;padding-top:24px">
+
+  <!-- Header -->
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
+    <img src="img/habitica-icon.png" alt="Habitica" width="36" height="36"
+         onerror="this.style.display='none'" />
+    <div>
+      <h1 style="font-size:18px;font-weight:700;color:#172b4d">
+        Habitica × Trello
+      </h1>
+      <p style="font-size:12px;color:#5e6c84">Static Power-Up dashboard</p>
+    </div>
+  </div>
+
+  <!-- ── Credentials ──────────────────────────────────────────────────── -->
+  <div class="card">
+    <h2>⚙️ Habitica Credentials</h2>
+    <p style="font-size:12px;color:#5e6c84;margin-bottom:6px">
+      Find these at <strong>Habitica → Settings → API</strong>.
+      Stored only in your browser's localStorage.
+    </p>
+
+    <label for="idx-user-id">User ID</label>
+    <input type="text"     id="idx-user-id"  placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+
+    <label for="idx-api-key">API Token</label>
+    <input type="password" id="idx-api-key"  placeholder="Your API token" />
+
+    <div class="btn-group" style="margin-top:12px">
+      <button id="idx-btn-save" class="btn btn-primary">Save &amp; Connect</button>
+      <button id="idx-btn-refresh" class="btn btn-secondary">↺ Refresh Stats</button>
+    </div>
+  </div>
+
+  <!-- ── Stats ────────────────────────────────────────────────────────── -->
+  <div id="idx-stats" class="hidden">
+
+    <div class="card" style="text-align:center">
+      <div style="font-size:24px;font-weight:700;color:#172b4d" id="idx-name">—</div>
+      <div style="font-size:13px;color:#5e6c84;margin-top:3px" id="idx-level">—</div>
+    </div>
+
+    <div class="card">
+      <div class="progress-wrap progress-hp">
+        <div class="progress-label">
+          <span>❤️ HP</span>
+          <span id="idx-hp">—</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="idx-bar-hp" style="width:0%"></div>
+        </div>
+      </div>
+
+      <div class="progress-wrap progress-xp" style="margin-top:12px">
+        <div class="progress-label">
+          <span>⭐ XP</span>
+          <span id="idx-xp">—</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="idx-bar-xp" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-item stat-gold">
+        <div class="stat-label">Gold</div>
+        <div class="stat-value">💰 <span id="idx-gold">—</span></div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Tasks Mapped</div>
+        <div class="stat-value" id="idx-mapped">—</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── How to use ───────────────────────────────────────────────────── -->
+  <div class="card">
+    <h2>🚀 How to use</h2>
+    <ol style="font-size:13px;color:#5e6c84;line-height:1.8;padding-left:18px">
+      <li>Enter your Habitica credentials above and click <strong>Save &amp; Connect</strong>.</li>
+      <li>Go to <a href="https://trello.com/power-ups/admin" target="_blank" rel="noopener">Trello Power-Ups</a> and create a new Power-Up.</li>
+      <li>Set the <strong>iframe connector URL</strong> to this page's URL (e.g. <code>https://your-user.github.io/repo/powerup.html</code>).</li>
+      <li>Add the Power-Up to your Trello board.</li>
+      <li>On any card, click <strong>Sync to Habitica</strong> to link it.</li>
+      <li>Use labels <code>TODO</code> / <code>DAILY</code> / <code>HABIT</code> to set task type automatically.</li>
+    </ol>
+  </div>
+
+  <!-- ── Label guide ──────────────────────────────────────────────────── -->
+  <div class="card">
+    <h2>🏷️ Label Guide</h2>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="badge badge-todo">TODO</span>
+        <span style="font-size:13px;color:#5e6c84">One-off task, disappears when completed</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="badge badge-daily">DAILY</span>
+        <span style="font-size:13px;color:#5e6c84">Repeating task, resets every day</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="badge badge-habit">HABIT</span>
+        <span style="font-size:13px;color:#5e6c84">Score + or − any number of times</span>
+      </div>
+    </div>
+  </div>
+
+  <p style="font-size:11px;color:#97a0af;text-align:center;margin:16px 0 24px">
+    All data stored locally in your browser. No backend. No server.
+  </p>
+
+</div><!-- /container -->
+
+<div id="notification"></div>
+
+<script src="js/habitica.js"></script>
+<script src="js/trello.js"></script>
+<script src="js/app.js"></script>
+
+<script>
+  // Show number of mapped cards
+  document.addEventListener('DOMContentLoaded', () => {
+    const el = document.getElementById('idx-mapped');
+    if (el) {
+      const map = JSON.parse(localStorage.getItem('habitica_trello_map') || '{}');
+      el.textContent = Object.keys(map).length;
+    }
+  });
+</script>
+
+</body>
+</html>

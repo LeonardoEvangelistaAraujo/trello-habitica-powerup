@@ -1,0 +1,17 @@
+{
+  "name": "Habitica Sync",
+  "description": "Sync Trello cards with Habitica tasks, dailies and habits.",
+  "connectors": {
+    "iframe": {
+      "url": "{YOUR_GITHUB_PAGES_URL}/powerup.html"
+    }
+  },
+  "capabilities": [
+    "card-buttons",
+    "card-badges",
+    "board-buttons"
+  ],
+  "icon": {
+    "url": "{YOUR_GITHUB_PAGES_URL}/img/habitica-icon.svg"
+  }
+}

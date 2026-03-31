@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Habitica Power-Up</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    /* Iframe-specific overrides */
+    body { background: #fff; padding: 0; }
+    .container { padding: 14px; max-width: 100%; }
+  </style>
+</head>
+<body class="powerup-body">
+
+<div class="container">
+
+  <!-- ══ VIEW: SETUP ══════════════════════════════════════════════════════ -->
+  <div id="view-setup" class="hidden">
+    <div class="card">
+      <h2>🎮 Connect Habitica</h2>
+      <p style="font-size:12px;color:#5e6c84;margin-bottom:8px">
+        Find your credentials at
+        <strong>Habitica → Settings → API</strong>
+      </p>
+
+      <label for="habitica-user-id">User ID</label>
+      <input type="text" id="habitica-user-id" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+
+      <label for="habitica-api-key">API Token</label>
+      <input type="password" id="habitica-api-key" placeholder="Your API token" />
+
+      <div class="btn-group" style="margin-top:14px">
+        <button id="btn-save-credentials" class="btn btn-primary btn-lg">Save &amp; Connect</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ VIEW: SYNC ════════════════════════════════════════════════════════ -->
+  <div id="view-sync" class="hidden">
+    <div class="card">
+      <h2>Sync to Habitica</h2>
+      <p style="font-size:13px;color:#172b4d;margin-bottom:12px">
+        Card: <strong id="sync-card-name">—</strong>
+      </p>
+
+      <p style="font-size:12px;color:#5e6c84;margin-bottom:4px">
+        Select task type or use a card label (TODO / DAILY / HABIT):
+      </p>
+
+      <select id="task-type">
+        <option value="todo">To-Do</option>
+        <option value="daily">Daily</option>
+        <option value="habit">Habit</option>
+      </select>
+
+      <div class="btn-group" style="margin-top:14px">
+        <button id="btn-create-todo"  class="btn btn-success">Create as To-Do</button>
+        <button id="btn-create-daily" class="btn btn-primary">Create as Daily</button>
+        <button id="btn-create-habit" class="btn btn-warning">Create as Habit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ VIEW: ACTIONS ═════════════════════════════════════════════════════ -->
+  <div id="view-actions" class="hidden">
+    <div class="card">
+      <h2>Habitica Actions</h2>
+
+      <!-- Todo / Daily: mark done -->
+      <div id="done-section" class="hidden">
+        <p style="font-size:13px;color:#5e6c84;margin-bottom:10px">
+          Mark this task as completed in Habitica.
+        </p>
+        <button id="btn-mark-done" class="btn btn-success btn-lg">✓ Mark Done</button>
+      </div>
+
+      <!-- Habit: + / − -->
+      <div id="habit-section" class="hidden">
+        <p style="font-size:13px;color:#5e6c84;margin-bottom:10px">
+          Score this habit.
+        </p>
+        <div class="habit-actions">
+          <button id="btn-habit-up"   class="btn btn-habit-up">+</button>
+          <span>Positive / Negative</span>
+          <button id="btn-habit-down" class="btn btn-habit-down">−</button>
+        </div>
+      </div>
+
+      <hr />
+
+      <button id="btn-unlink" class="btn btn-secondary btn-sm">
+        Unlink from Habitica
+      </button>
+    </div>
+  </div>
+
+  <!-- ══ VIEW: DASHBOARD ═══════════════════════════════════════════════════ -->
+  <div id="view-dashboard" class="hidden">
+
+    <div id="dashboard-spinner" style="text-align:center;padding:30px">
+      <span class="spinner" style="border-color:rgba(0,82,204,.3);border-top-color:#0052cc;width:28px;height:28px"></span>
+      <p style="margin-top:8px;color:#5e6c84;font-size:12px">Loading…</p>
+    </div>
+
+    <div id="dashboard-content" class="hidden">
+      <div class="card" style="text-align:center;padding:18px 16px">
+        <div style="font-size:22px;font-weight:700;color:#172b4d" id="stat-name">—</div>
+        <div style="font-size:13px;color:#5e6c84;margin-top:2px">
+          <span id="stat-level">—</span> &bull; <span id="stat-class">—</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <!-- HP -->
+        <div class="progress-wrap progress-hp">
+          <div class="progress-label">
+            <span>❤️ HP</span>
+            <span id="val-hp">—</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" id="bar-hp" style="width:0%"></div></div>
+        </div>
+
+        <!-- XP -->
+        <div class="progress-wrap progress-xp" style="margin-top:12px">
+          <div class="progress-label">
+            <span>⭐ XP</span>
+            <span id="val-xp">—</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" id="bar-xp" style="width:0%"></div></div>
+        </div>
+      </div>
+
+      <div class="stats-grid" style="padding:0 0 4px">
+        <div class="stat-item stat-gold">
+          <div class="stat-label">Gold</div>
+          <div class="stat-value">💰 <span id="val-gold">—</span></div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Gems</div>
+          <div class="stat-value">💎 <span id="val-gems">—</span></div>
+        </div>
+      </div>
+
+      <div style="margin-top:10px">
+        <button onclick="initDashboardView()" class="btn btn-secondary btn-sm">↺ Refresh</button>
+        <a href="powerup.html?view=setup" class="btn btn-ghost btn-sm">⚙ Settings</a>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<div id="notification"></div>
+
+<!--
+  Load order matters:
+  1. Trello client  — defines window.TrelloPowerUp
+  2. habitica.js    — pure API helpers (no dependencies)
+  3. trello.js      — calls TrelloPowerUp.initialize(), uses habitica helpers
+  4. app.js         — UI init, uses helpers from both above files
+-->
+<script src="https://p.trellocdn.com/power-up.min.js"></script>
+<script src="js/habitica.js"></script>
+<script src="js/trello.js"></script>
+<script src="js/app.js"></script>
+
+<script>
+  // Reveal the correct view panel immediately after DOM + scripts are ready.
+  (function showView() {
+    const view = new URLSearchParams(window.location.search).get('view') || 'setup';
+    const validViews = ['setup', 'sync', 'actions', 'dashboard'];
+    const target = validViews.includes(view) ? view : 'setup';
+    const el = document.getElementById('view-' + target);
+    if (el) el.classList.remove('hidden');
+  })();
+</script>
+
+</body>
+</html>
