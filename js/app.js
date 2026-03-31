@@ -1,34 +1,40 @@
 /**
  * app.js
- * UI logic for all views rendered inside powerup.html
+ * UI logic for all views rendered inside powerup.html (popup mode)
  * and the standalone index.html dashboard.
- *
- * Views (controlled via ?view= query param in powerup.html):
- *   setup     – enter Habitica credentials
- *   sync      – create a Habitica task from a Trello card
- *   actions   – complete / score a synced task
- *   dashboard – show user stats
  */
+
+/* ── Close the current Trello popup ─────────────────────────────────────── */
+// In popup context TrelloPowerUp.iframe() gives us the context object.
+// In connector context this is never called.
+function closeTrelloPopup() {
+  try {
+    window.TrelloPowerUp.iframe().closePopup();
+  } catch (e) {
+    // Fallback: close the window (e.g. during local testing)
+    window.close();
+  }
+}
 
 /* ── Notification helper ─────────────────────────────────────────────────── */
 
 function notify(msg, type = 'info', duration = 3000) {
   const el = document.getElementById('notification');
   if (!el) return;
-  el.textContent  = msg;
-  el.className    = `show ${type}`;
+  el.textContent = msg;
+  el.className   = 'show ' + type;
   clearTimeout(el._timer);
   el._timer = setTimeout(() => { el.className = ''; }, duration);
 }
 
-/* ── Loading state helpers ───────────────────────────────────────────────── */
+/* ── Button loading state ────────────────────────────────────────────────── */
 
 function setLoading(btn, loading) {
   if (!btn) return;
   if (loading) {
     btn.dataset.origText = btn.innerHTML;
-    btn.innerHTML = '<span class="spinner"></span>';
-    btn.disabled  = true;
+    btn.innerHTML        = '<span class="spinner"></span>';
+    btn.disabled         = true;
   } else {
     btn.innerHTML = btn.dataset.origText || btn.innerHTML;
     btn.disabled  = false;
@@ -45,14 +51,13 @@ function getParams() {
 
 /* ════════════════════════════════════════════════════════════════════════════
    VIEW: SETUP
-   ════════════════════════════════════════════════════════════════════════════ */
+════════════════════════════════════════════════════════════════════════════ */
 
 function initSetupView() {
   const userInput = document.getElementById('habitica-user-id');
   const keyInput  = document.getElementById('habitica-api-key');
   const btn       = document.getElementById('btn-save-credentials');
 
-  // Pre-fill saved values
   userInput.value = localStorage.getItem('habitica_user_id') || '';
   keyInput.value  = localStorage.getItem('habitica_api_key')  || '';
 
@@ -60,23 +65,18 @@ function initSetupView() {
     const userId = userInput.value.trim();
     const apiKey = keyInput.value.trim();
 
-    if (!userId || !apiKey) {
-      notify('Both fields are required.', 'error');
-      return;
-    }
+    if (!userId || !apiKey) { notify('Both fields are required.', 'error'); return; }
 
     setLoading(btn, true);
-
-    // Validate by fetching user stats
     localStorage.setItem('habitica_user_id', userId);
     localStorage.setItem('habitica_api_key',  apiKey);
 
     try {
       const user = await getUserStats();
       notify(`Connected as ${user.profile.name}!`, 'success');
-      setTimeout(() => window.location.reload(), 1200);
+      setTimeout(closeTrelloPopup, 1200);
     } catch (err) {
-      notify(`Error: ${err.message}`, 'error');
+      notify('Error: ' + err.message, 'error');
       localStorage.removeItem('habitica_user_id');
       localStorage.removeItem('habitica_api_key');
     } finally {
@@ -86,99 +86,92 @@ function initSetupView() {
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
-   VIEW: SYNC  (create Habitica task from Trello card)
-   ════════════════════════════════════════════════════════════════════════════ */
+   VIEW: SYNC
+════════════════════════════════════════════════════════════════════════════ */
 
 function initSyncView() {
   const params   = getParams();
   const cardId   = params.cardId   || '';
   const cardName = decodeURIComponent(params.cardName || '');
   const cardDesc = decodeURIComponent(params.cardDesc || '');
-  const labels   = JSON.parse(decodeURIComponent(params.labels || '[]'));
+  let   labels   = [];
+  try { labels = JSON.parse(decodeURIComponent(params.labels || '[]')); } catch (_) {}
 
-  // Show card name
-  const titleEl = document.getElementById('sync-card-name');
-  if (titleEl) titleEl.textContent = cardName;
-
-  // Pre-select task type from labels
+  const titleEl    = document.getElementById('sync-card-name');
   const typeSelect = document.getElementById('task-type');
-  if (typeSelect) {
-    typeSelect.value = taskTypeFromLabels(labels);
-  }
 
-  // Wire up individual create buttons
+  if (titleEl)    titleEl.textContent = cardName || '(no name)';
+  if (typeSelect) typeSelect.value    = taskTypeFromLabels(labels);
+
   ['todo', 'daily', 'habit'].forEach(type => {
-    const btn = document.getElementById(`btn-create-${type}`);
+    const btn = document.getElementById('btn-create-' + type);
     if (!btn) return;
     btn.addEventListener('click', () => syncCard(cardId, cardName, cardDesc, type, btn));
   });
 }
 
 async function syncCard(cardId, cardName, cardDesc, type, btn) {
-  if (!cardId || !cardName) { notify('Missing card data.', 'error'); return; }
+  if (!cardId)   { notify('Missing card ID.',   'error'); return; }
+  if (!cardName) { notify('Missing card name.', 'error'); return; }
 
   setLoading(btn, true);
   try {
     const task = await createTask(cardName, type, cardDesc);
     linkCard(cardId, task.id);
-    notify(`Created as ${type}!`, 'success');
-    setTimeout(() => {
-      if (window.TrelloPowerUp) {
-        window.TrelloPowerUp.iframe().closePopup();
-      }
-    }, 1200);
+    notify('Created as ' + type + '!', 'success');
+    setTimeout(closeTrelloPopup, 1000);
   } catch (err) {
-    notify(`Error: ${err.message}`, 'error');
+    notify('Error: ' + err.message, 'error');
   } finally {
     setLoading(btn, false);
   }
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
-   VIEW: ACTIONS  (complete / score already-synced task)
-   ════════════════════════════════════════════════════════════════════════════ */
+   VIEW: ACTIONS
+════════════════════════════════════════════════════════════════════════════ */
 
 function initActionsView() {
   const params   = getParams();
   const cardId   = params.cardId || '';
-  const labels   = JSON.parse(decodeURIComponent(params.labels || '[]'));
+  let   labels   = [];
+  try { labels = JSON.parse(decodeURIComponent(params.labels || '[]')); } catch (_) {}
+
   const taskType = taskTypeFromLabels(labels);
   const taskId   = getHabiticaId(cardId);
 
-  if (!taskId) {
-    notify('No linked Habitica task found.', 'error');
-    return;
-  }
-
-  // Show/hide sections based on type
   const habitSection = document.getElementById('habit-section');
   const doneSection  = document.getElementById('done-section');
 
-  if (taskType === 'habit') {
-    if (habitSection) habitSection.classList.remove('hidden');
-    if (doneSection)  doneSection.classList.add('hidden');
-  } else {
-    if (doneSection)  doneSection.classList.remove('hidden');
+  if (!taskId) {
+    if (doneSection)  doneSection.innerHTML  = '<p style="color:#de350b">No linked task found. Sync this card first.</p>';
     if (habitSection) habitSection.classList.add('hidden');
+    return;
   }
 
-  // Mark done (todo / daily)
+  if (taskType === 'habit') {
+    habitSection && habitSection.classList.remove('hidden');
+    doneSection  && doneSection.classList.add('hidden');
+  } else {
+    doneSection  && doneSection.classList.remove('hidden');
+    habitSection && habitSection.classList.add('hidden');
+  }
+
   const btnDone = document.getElementById('btn-mark-done');
   if (btnDone) {
     btnDone.addEventListener('click', async () => {
       setLoading(btnDone, true);
       try {
-        await completeTask(taskId);
-        notify('Task completed! XP earned.', 'success');
+        const result = await completeTask(taskId);
+        notify('Done! +'  + Math.round((result.exp || 0)) + ' XP', 'success');
       } catch (err) {
-        notify(`Error: ${err.message}`, 'error');
+        notify('Error: ' + err.message, 'error');
       } finally {
         setLoading(btnDone, false);
       }
     });
   }
 
-  // Habit +
   const btnUp = document.getElementById('btn-habit-up');
   if (btnUp) {
     btnUp.addEventListener('click', async () => {
@@ -187,14 +180,13 @@ function initActionsView() {
         await scoreHabitUp(taskId);
         notify('Habit scored +!', 'success');
       } catch (err) {
-        notify(`Error: ${err.message}`, 'error');
+        notify('Error: ' + err.message, 'error');
       } finally {
         setLoading(btnUp, false);
       }
     });
   }
 
-  // Habit −
   const btnDown = document.getElementById('btn-habit-down');
   if (btnDown) {
     btnDown.addEventListener('click', async () => {
@@ -203,81 +195,106 @@ function initActionsView() {
         await scoreHabitDown(taskId);
         notify('Habit scored −.', 'info');
       } catch (err) {
-        notify(`Error: ${err.message}`, 'error');
+        notify('Error: ' + err.message, 'error');
       } finally {
         setLoading(btnDown, false);
       }
     });
   }
 
-  // Unlink
   const btnUnlink = document.getElementById('btn-unlink');
   if (btnUnlink) {
     btnUnlink.addEventListener('click', () => {
       unlinkCard(cardId);
-      notify('Card unlinked from Habitica.', 'info');
-      setTimeout(() => {
-        if (window.TrelloPowerUp) window.TrelloPowerUp.iframe().closePopup();
-      }, 1000);
+      notify('Card unlinked.', 'info');
+      setTimeout(closeTrelloPopup, 900);
     });
   }
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
-   VIEW: DASHBOARD  (user stats panel)
-   ════════════════════════════════════════════════════════════════════════════ */
+   VIEW: DASHBOARD  (board-level stats)
+════════════════════════════════════════════════════════════════════════════ */
 
 async function initDashboardView() {
-  const container = document.getElementById('dashboard-content');
   const spinner   = document.getElementById('dashboard-spinner');
+  const container = document.getElementById('dashboard-content');
+  const noCredsEl = document.getElementById('dashboard-no-creds');
 
   if (!localStorage.getItem('habitica_user_id')) {
-    if (container) container.innerHTML = '<p style="color:#de350b">Credentials not set. <a href="powerup.html?view=setup">Set up now</a></p>';
+    spinner   && spinner.classList.add('hidden');
+    noCredsEl && noCredsEl.classList.remove('hidden');
     return;
   }
 
   try {
     const user  = await getUserStats();
     const stats = user.stats;
-    const name  = user.profile.name;
 
-    if (spinner)   spinner.classList.add('hidden');
-    if (container) container.classList.remove('hidden');
+    spinner   && spinner.classList.add('hidden');
+    container && container.classList.remove('hidden');
 
-    // Name + Level
-    setText('stat-name',  name);
-    setText('stat-level', `Level ${stats.lvl}`);
+    setText('stat-name',  user.profile.name);
+    setText('stat-level', 'Level ' + stats.lvl);
     setText('stat-class', capitalise(stats.class || 'warrior'));
 
-    // Numeric values
-    setText('val-hp',   `${Math.floor(stats.hp)} / ${stats.maxHealth}`);
-    setText('val-xp',   `${Math.floor(stats.exp)} / ${stats.toNextLevel}`);
-    setText('val-gold', Math.floor(stats.gp));
-    setText('val-gems', user.balance * 4 | 0);
+    // HP
+    const hpPct = Math.min(100, Math.round((stats.hp / stats.maxHealth) * 100));
+    setText('val-hp', Math.floor(stats.hp) + ' / ' + stats.maxHealth);
+    setBar('bar-hp', hpPct);
 
-    // Progress bars
-    setBar('bar-hp', stats.hp,  stats.maxHealth);
-    setBar('bar-xp', stats.exp, stats.toNextLevel);
+    // XP
+    const xpPct = Math.min(100, Math.round((stats.exp / stats.toNextLevel) * 100));
+    setText('val-xp', Math.floor(stats.exp) + ' / ' + stats.toNextLevel);
+    setBar('bar-xp', xpPct);
+
+    // Gold & Gems
+    setText('val-gold', Math.floor(stats.gp));
+    setText('val-gems', (user.balance * 4) | 0);
+
+    // MP (mana) — only relevant for mage/healer but shown for all
+    if (stats.maxMP && stats.maxMP > 0) {
+      const mpEl = document.getElementById('mp-section');
+      if (mpEl) {
+        mpEl.classList.remove('hidden');
+        const mpPct = Math.min(100, Math.round((stats.mp / stats.maxMP) * 100));
+        setText('val-mp', Math.floor(stats.mp) + ' / ' + stats.maxMP);
+        setBar('bar-mp', mpPct);
+      }
+    }
+
+    // Mapped cards count
+    const map = JSON.parse(localStorage.getItem('habitica_trello_map') || '{}');
+    setText('val-mapped', Object.keys(map).length + ' card(s)');
 
   } catch (err) {
-    if (spinner) spinner.classList.add('hidden');
+    spinner && spinner.classList.add('hidden');
     if (container) {
       container.classList.remove('hidden');
-      container.innerHTML = `<p style="color:#de350b">Error: ${err.message}</p>`;
+      container.innerHTML = '<p style="color:#de350b;padding:16px">Error: ' + err.message + '</p>';
     }
   }
 }
+
+/* ── Refresh button (called inline from dashboard HTML) ──────────────────── */
+async function refreshDashboard() {
+  const container = document.getElementById('dashboard-content');
+  const spinner   = document.getElementById('dashboard-spinner');
+  if (container) container.classList.add('hidden');
+  if (spinner)   spinner.classList.remove('hidden');
+  await initDashboardView();
+}
+
+/* ── DOM helpers ─────────────────────────────────────────────────────────── */
 
 function setText(id, val) {
   const el = document.getElementById(id);
   if (el) el.textContent = val;
 }
 
-function setBar(id, current, max) {
+function setBar(id, pct) {
   const el = document.getElementById(id);
-  if (!el) return;
-  const pct = Math.min(100, Math.round((current / max) * 100));
-  el.style.width = pct + '%';
+  if (el) el.style.width = pct + '%';
 }
 
 function capitalise(str) {
@@ -285,11 +302,10 @@ function capitalise(str) {
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
-   VIEW: INDEX.HTML standalone dashboard
-   ════════════════════════════════════════════════════════════════════════════ */
+   INDEX.HTML standalone dashboard
+════════════════════════════════════════════════════════════════════════════ */
 
 async function initIndexPage() {
-  // Credentials section
   const userInput  = document.getElementById('idx-user-id');
   const keyInput   = document.getElementById('idx-api-key');
   const btnSave    = document.getElementById('idx-btn-save');
@@ -310,7 +326,7 @@ async function initIndexPage() {
         await loadIndexStats();
         notify('Credentials saved!', 'success');
       } catch (err) {
-        notify(`Error: ${err.message}`, 'error');
+        notify('Error: ' + err.message, 'error');
       } finally {
         setLoading(btnSave, false);
       }
@@ -326,9 +342,8 @@ async function initIndexPage() {
     });
   }
 
-  // Auto-load if credentials exist
   if (localStorage.getItem('habitica_user_id')) {
-    try { await loadIndexStats(); } catch (_) { /* silent on auto-load */ }
+    try { await loadIndexStats(); } catch (_) {}
   }
 }
 
@@ -336,31 +351,29 @@ async function loadIndexStats() {
   const user  = await getUserStats();
   const stats = user.stats;
 
-  const statsSection = document.getElementById('idx-stats');
-  if (statsSection) statsSection.classList.remove('hidden');
+  const section = document.getElementById('idx-stats');
+  if (section) section.classList.remove('hidden');
 
   setText('idx-name',  user.profile.name);
-  setText('idx-level', `Level ${stats.lvl} ${capitalise(stats.class || '')}`);
-  setText('idx-hp',    `${Math.floor(stats.hp)} / ${stats.maxHealth}`);
-  setText('idx-xp',    `${Math.floor(stats.exp)} / ${stats.toNextLevel}`);
+  setText('idx-level', 'Level ' + stats.lvl + ' ' + capitalise(stats.class || ''));
+  setText('idx-hp',    Math.floor(stats.hp)  + ' / ' + stats.maxHealth);
+  setText('idx-xp',    Math.floor(stats.exp) + ' / ' + stats.toNextLevel);
   setText('idx-gold',  Math.floor(stats.gp));
 
-  setBar('idx-bar-hp', stats.hp,  stats.maxHealth);
-  setBar('idx-bar-xp', stats.exp, stats.toNextLevel);
+  setBar('idx-bar-hp', Math.min(100, Math.round((stats.hp  / stats.maxHealth)   * 100)));
+  setBar('idx-bar-xp', Math.min(100, Math.round((stats.exp / stats.toNextLevel) * 100)));
 }
 
-/* ── Route to correct init function based on context ────────────────────── */
+/* ── Route to view ───────────────────────────────────────────────────────── */
 
 document.addEventListener('DOMContentLoaded', () => {
   const view = getParams().view;
-
   switch (view) {
     case 'setup':     initSetupView();     break;
     case 'sync':      initSyncView();      break;
     case 'actions':   initActionsView();   break;
     case 'dashboard': initDashboardView(); break;
     default:
-      // No ?view= param → we're on index.html
       if (document.getElementById('idx-user-id')) initIndexPage();
       break;
   }

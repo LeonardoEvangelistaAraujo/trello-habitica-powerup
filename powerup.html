@@ -6,31 +6,25 @@
   <title>Habitica Power-Up</title>
   <link rel="stylesheet" href="css/style.css" />
   <style>
-    /* Iframe-specific overrides */
-    body { background: #fff; padding: 0; }
+    body { background: #fff; }
     .container { padding: 14px; max-width: 100%; }
   </style>
 </head>
 <body class="powerup-body">
-
 <div class="container">
 
   <!-- ══ VIEW: SETUP ══════════════════════════════════════════════════════ -->
   <div id="view-setup" class="hidden">
     <div class="card">
-      <h2>🎮 Connect Habitica</h2>
+      <h2>Connect Habitica</h2>
       <p style="font-size:12px;color:#5e6c84;margin-bottom:8px">
-        Find your credentials at
-        <strong>Habitica → Settings → API</strong>
+        Find your credentials at <strong>Habitica &rarr; Settings &rarr; API</strong>
       </p>
-
       <label for="habitica-user-id">User ID</label>
-      <input type="text" id="habitica-user-id" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
-
+      <input type="text"     id="habitica-user-id" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
       <label for="habitica-api-key">API Token</label>
-      <input type="password" id="habitica-api-key" placeholder="Your API token" />
-
-      <div class="btn-group" style="margin-top:14px">
+      <input type="password" id="habitica-api-key"  placeholder="Your API token" />
+      <div style="margin-top:14px">
         <button id="btn-save-credentials" class="btn btn-primary btn-lg">Save &amp; Connect</button>
       </div>
     </div>
@@ -43,17 +37,14 @@
       <p style="font-size:13px;color:#172b4d;margin-bottom:12px">
         Card: <strong id="sync-card-name">—</strong>
       </p>
-
-      <p style="font-size:12px;color:#5e6c84;margin-bottom:4px">
-        Select task type or use a card label (TODO / DAILY / HABIT):
+      <p style="font-size:12px;color:#5e6c84;margin-bottom:6px">
+        Choose task type (or set a label <code>TODO</code> / <code>DAILY</code> / <code>HABIT</code>):
       </p>
-
       <select id="task-type">
         <option value="todo">To-Do</option>
         <option value="daily">Daily</option>
         <option value="habit">Habit</option>
       </select>
-
       <div class="btn-group" style="margin-top:14px">
         <button id="btn-create-todo"  class="btn btn-success">Create as To-Do</button>
         <button id="btn-create-daily" class="btn btn-primary">Create as Daily</button>
@@ -67,98 +58,135 @@
     <div class="card">
       <h2>Habitica Actions</h2>
 
-      <!-- Todo / Daily: mark done -->
+      <!-- Todo / Daily -->
       <div id="done-section" class="hidden">
         <p style="font-size:13px;color:#5e6c84;margin-bottom:10px">
-          Mark this task as completed in Habitica.
+          Mark this task as completed in Habitica and earn XP.
         </p>
-        <button id="btn-mark-done" class="btn btn-success btn-lg">✓ Mark Done</button>
+        <button id="btn-mark-done" class="btn btn-success btn-lg">&#10003; Mark Done</button>
       </div>
 
-      <!-- Habit: + / − -->
+      <!-- Habit -->
       <div id="habit-section" class="hidden">
         <p style="font-size:13px;color:#5e6c84;margin-bottom:10px">
-          Score this habit.
+          Score this habit positively or negatively.
         </p>
         <div class="habit-actions">
           <button id="btn-habit-up"   class="btn btn-habit-up">+</button>
-          <span>Positive / Negative</span>
-          <button id="btn-habit-down" class="btn btn-habit-down">−</button>
+          <span>Positive &nbsp;/&nbsp; Negative</span>
+          <button id="btn-habit-down" class="btn btn-habit-down">&minus;</button>
         </div>
       </div>
 
       <hr />
-
-      <button id="btn-unlink" class="btn btn-secondary btn-sm">
-        Unlink from Habitica
-      </button>
+      <button id="btn-unlink" class="btn btn-secondary btn-sm">Unlink from Habitica</button>
     </div>
   </div>
 
   <!-- ══ VIEW: DASHBOARD ═══════════════════════════════════════════════════ -->
   <div id="view-dashboard" class="hidden">
 
+    <!-- Loading -->
     <div id="dashboard-spinner" style="text-align:center;padding:30px">
-      <span class="spinner" style="border-color:rgba(0,82,204,.3);border-top-color:#0052cc;width:28px;height:28px"></span>
-      <p style="margin-top:8px;color:#5e6c84;font-size:12px">Loading…</p>
+      <span class="spinner"
+        style="border-color:rgba(0,82,204,.25);border-top-color:#0052cc;width:28px;height:28px"></span>
+      <p style="margin-top:8px;color:#5e6c84;font-size:12px">Loading stats…</p>
     </div>
 
+    <!-- No credentials -->
+    <div id="dashboard-no-creds" class="hidden" style="padding:8px">
+      <div class="card">
+        <p style="color:#de350b;margin-bottom:10px">Credentials not set yet.</p>
+        <a href="powerup.html?view=setup" class="btn btn-primary btn-lg">Setup Habitica</a>
+      </div>
+    </div>
+
+    <!-- Stats content -->
     <div id="dashboard-content" class="hidden">
-      <div class="card" style="text-align:center;padding:18px 16px">
-        <div style="font-size:22px;font-weight:700;color:#172b4d" id="stat-name">—</div>
-        <div style="font-size:13px;color:#5e6c84;margin-top:2px">
+
+      <!-- Name + class -->
+      <div style="text-align:center;padding:12px 0 8px">
+        <div style="font-size:20px;font-weight:700;color:#172b4d" id="stat-name">—</div>
+        <div style="font-size:12px;color:#5e6c84;margin-top:3px">
           <span id="stat-level">—</span> &bull; <span id="stat-class">—</span>
         </div>
       </div>
 
-      <div class="card">
-        <!-- HP -->
+      <!-- HP bar -->
+      <div class="card" style="padding:12px 14px">
         <div class="progress-wrap progress-hp">
           <div class="progress-label">
-            <span>❤️ HP</span>
-            <span id="val-hp">—</span>
+            <span>&#10084;&#65039; HP</span>
+            <span id="val-hp" style="font-weight:600">—</span>
           </div>
-          <div class="progress-bar"><div class="progress-fill" id="bar-hp" style="width:0%"></div></div>
+          <div class="progress-bar" style="height:10px">
+            <div class="progress-fill" id="bar-hp" style="width:0%;background:#de350b"></div>
+          </div>
         </div>
 
-        <!-- XP -->
+        <!-- XP bar -->
         <div class="progress-wrap progress-xp" style="margin-top:12px">
           <div class="progress-label">
-            <span>⭐ XP</span>
-            <span id="val-xp">—</span>
+            <span>&#11088; XP</span>
+            <span id="val-xp" style="font-weight:600">—</span>
           </div>
-          <div class="progress-bar"><div class="progress-fill" id="bar-xp" style="width:0%"></div></div>
+          <div class="progress-bar" style="height:10px">
+            <div class="progress-fill" id="bar-xp" style="width:0%;background:#ff991f"></div>
+          </div>
+        </div>
+
+        <!-- MP bar (hidden for non-mana classes) -->
+        <div id="mp-section" class="hidden" style="margin-top:12px">
+          <div class="progress-wrap">
+            <div class="progress-label">
+              <span>&#128161; MP</span>
+              <span id="val-mp" style="font-weight:600">—</span>
+            </div>
+            <div class="progress-bar" style="height:10px">
+              <div class="progress-fill" id="bar-mp" style="width:0%;background:#6554c0"></div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div class="stats-grid" style="padding:0 0 4px">
+      <!-- Gold / Gems / Mapped cards -->
+      <div class="stats-grid">
         <div class="stat-item stat-gold">
-          <div class="stat-label">Gold</div>
-          <div class="stat-value">💰 <span id="val-gold">—</span></div>
+          <div class="stat-label">&#x1F4B0; Gold</div>
+          <div class="stat-value" id="val-gold">—</div>
         </div>
         <div class="stat-item">
-          <div class="stat-label">Gems</div>
-          <div class="stat-value">💎 <span id="val-gems">—</span></div>
+          <div class="stat-label">&#x1F48E; Gems</div>
+          <div class="stat-value" id="val-gems">—</div>
+        </div>
+        <div class="stat-item" style="grid-column:span 2">
+          <div class="stat-label">&#x2694;&#xFE0F; Trello cards synced</div>
+          <div class="stat-value" style="font-size:16px" id="val-mapped">—</div>
         </div>
       </div>
 
-      <div style="margin-top:10px">
-        <button onclick="initDashboardView()" class="btn btn-secondary btn-sm">↺ Refresh</button>
-        <a href="powerup.html?view=setup" class="btn btn-ghost btn-sm">⚙ Settings</a>
+      <!-- Actions -->
+      <div style="display:flex;gap:8px;margin-top:4px;padding-bottom:4px">
+        <button onclick="refreshDashboard()" class="btn btn-secondary btn-sm" style="flex:1">
+          &#8635; Refresh
+        </button>
+        <a href="powerup.html?view=setup" class="btn btn-ghost btn-sm" style="flex:1;text-align:center">
+          &#9881; Settings
+        </a>
       </div>
-    </div>
-  </div>
+
+    </div><!-- /dashboard-content -->
+  </div><!-- /view-dashboard -->
 
 </div><!-- /container -->
-
 <div id="notification"></div>
 
 <!--
-  Load order matters:
+  Load order:
   1. Trello client  — defines window.TrelloPowerUp
-  2. habitica.js    — pure API helpers (no dependencies)
-  3. trello.js      — calls TrelloPowerUp.initialize(), uses habitica helpers
-  4. app.js         — UI init, uses helpers from both above files
+  2. habitica.js    — API helpers (no deps)
+  3. trello.js      — calls initialize() ONLY when no ?view= param
+  4. app.js         — UI logic for all popup views
 -->
 <script src="https://p.trellocdn.com/power-up.min.js"></script>
 <script src="js/habitica.js"></script>
@@ -166,13 +194,15 @@
 <script src="js/app.js"></script>
 
 <script>
-  // Reveal the correct view panel immediately after DOM + scripts are ready.
-  (function showView() {
-    const view = new URLSearchParams(window.location.search).get('view') || 'setup';
-    const validViews = ['setup', 'sync', 'actions', 'dashboard'];
-    const target = validViews.includes(view) ? view : 'setup';
-    const el = document.getElementById('view-' + target);
-    if (el) el.classList.remove('hidden');
+  // Reveal the correct view panel. Runs after all scripts have loaded.
+  (function () {
+    const view   = new URLSearchParams(window.location.search).get('view') || '';
+    const valid  = ['setup', 'sync', 'actions', 'dashboard'];
+    const target = valid.includes(view) ? view : null;
+    if (target) {
+      const el = document.getElementById('view-' + target);
+      if (el) el.classList.remove('hidden');
+    }
   })();
 </script>
 

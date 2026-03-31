@@ -1,7 +1,11 @@
 /**
  * trello.js
  * Trello Power-Up initialisation and capability handlers.
- * This file is loaded only inside powerup.html (the iframe served to Trello).
+ *
+ * IMPORTANT: powerup.html is used for BOTH the connector URL (no ?view=)
+ * AND as popup pages (?view=setup, ?view=sync, etc.).
+ * TrelloPowerUp.initialize() must ONLY run in connector mode.
+ * In popup mode, TrelloPowerUp.iframe() is used instead.
  */
 
 /* ── Mapping helpers (localStorage) ─────────────────────────────────────── */
@@ -9,11 +13,8 @@
 const MAPPING_KEY = 'habitica_trello_map'; // { trelloCardId: habiticaTaskId }
 
 function getMapping() {
-  try {
-    return JSON.parse(localStorage.getItem(MAPPING_KEY) || '{}');
-  } catch {
-    return {};
-  }
+  try { return JSON.parse(localStorage.getItem(MAPPING_KEY) || '{}'); }
+  catch { return {}; }
 }
 
 function setMapping(map) {
@@ -47,10 +48,6 @@ function credentialsSet() {
 
 /* ── Derive Habitica task type from Trello card labels ───────────────────── */
 
-/**
- * Returns 'habit' | 'daily' | 'todo' based on label names on the card.
- * Falls back to 'todo'.
- */
 function taskTypeFromLabels(labels = []) {
   const names = labels.map(l => (l.name || '').toUpperCase());
   if (names.some(n => n.includes('HABIT')))  return 'habit';
@@ -58,104 +55,145 @@ function taskTypeFromLabels(labels = []) {
   return 'todo';
 }
 
-/* ── Power-Up initialisation ─────────────────────────────────────────────── */
+/* ── Base URL (works on GitHub Pages and locally) ────────────────────────── */
 
 const BASE_URL = (() => {
-  // Works on GitHub Pages and locally
   const { origin, pathname } = window.location;
-  // pathname may be e.g. /repo-name/powerup.html → strip filename
   const dir = pathname.substring(0, pathname.lastIndexOf('/') + 1);
   return origin + dir;
 })();
 
-window.TrelloPowerUp.initialize({
+// SVG encoded as a data URI so it always loads — no 404 risk
+const ICON = 'data:image/svg+xml,' + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" width="36" height="36">' +
+  '<rect width="36" height="36" rx="8" fill="#ff944c"/>' +
+  '<text x="18" y="26" font-size="22" text-anchor="middle" font-family="serif" fill="#fff">H</text>' +
+  '</svg>'
+);
 
-  /* ── Card Buttons ──────────────────────────────────────────────────────── */
-  'card-buttons': (t) => {
-    return t.card('id', 'name', 'labels', 'desc').then(card => {
-      const synced    = !!getHabiticaId(card.id);
-      const taskType  = taskTypeFromLabels(card.labels);
+/* ── Only initialise when this page is the connector (no ?view= param) ────── */
 
-      const buttons = [];
+const isConnector = !new URLSearchParams(window.location.search).get('view');
 
-      if (!credentialsSet()) {
+if (isConnector) {
+
+  window.TrelloPowerUp.initialize({
+
+    /* ── Card Buttons ────────────────────────────────────────────────────── */
+    'card-buttons': function (t) {
+      return t.card('id', 'name', 'labels', 'desc').then(function (card) {
+
+        if (!credentialsSet()) {
+          return [{
+            icon:     ICON,
+            text:     'Setup Habitica',
+            callback: function (t) {
+              return t.popup({
+                title:  'Habitica – Setup',
+                url:    BASE_URL + 'powerup.html?view=setup',
+                height: 280,
+              });
+            },
+          }];
+        }
+
+        const synced   = !!getHabiticaId(card.id);
+        const taskType = taskTypeFromLabels(card.labels);
+        const buttons  = [];
+
+        if (!synced) {
+          buttons.push({
+            icon:     ICON,
+            text:     'Sync to Habitica',
+            callback: function (t) {
+              return t.card('id', 'name', 'labels', 'desc').then(function (c) {
+                return t.popup({
+                  title:  'Sync to Habitica',
+                  url:    BASE_URL +
+                    'powerup.html?view=sync' +
+                    '&cardId='   + encodeURIComponent(c.id) +
+                    '&cardName=' + encodeURIComponent(c.name) +
+                    '&cardDesc=' + encodeURIComponent(c.desc || '') +
+                    '&labels='   + encodeURIComponent(JSON.stringify(c.labels)),
+                  height: 320,
+                });
+              });
+            },
+          });
+        } else {
+          buttons.push({
+            icon:     ICON,
+            text:     taskType === 'habit' ? 'Habit +/−' : 'Mark Done',
+            callback: function (t) {
+              return t.card('id', 'labels').then(function (c) {
+                return t.popup({
+                  title:  'Habitica Actions',
+                  url:    BASE_URL +
+                    'powerup.html?view=actions' +
+                    '&cardId=' + encodeURIComponent(c.id) +
+                    '&labels=' + encodeURIComponent(JSON.stringify(c.labels)),
+                  height: 300,
+                });
+              });
+            },
+          });
+        }
+
         buttons.push({
-          icon:      BASE_URL + 'img/habitica-icon.png',
-          text:      'Setup Habitica',
-          callback:  t => t.popup({
-            title:  'Habitica Setup',
-            url:    BASE_URL + 'powerup.html?view=setup',
-            height: 260,
-          }),
+          icon:     ICON,
+          text:     'My Stats',
+          callback: function (t) {
+            return t.popup({
+              title:  'Habitica Stats',
+              url:    BASE_URL + 'powerup.html?view=dashboard',
+              height: 420,
+            });
+          },
         });
+
         return buttons;
-      }
-
-      if (!synced) {
-        buttons.push({
-          icon:     BASE_URL + 'img/habitica-icon.png',
-          text:     'Sync to Habitica',
-          callback: async (t) => {
-            const c = await t.card('id', 'name', 'labels', 'desc');
-            await t.popup({
-              title:  'Sync to Habitica',
-              url:    BASE_URL + `powerup.html?view=sync&cardId=${c.id}&cardName=${encodeURIComponent(c.name)}&cardDesc=${encodeURIComponent(c.desc)}&labels=${encodeURIComponent(JSON.stringify(c.labels))}`,
-              height: 320,
-            });
-          },
-        });
-      } else {
-        // Already synced — show action buttons
-        buttons.push({
-          icon:     BASE_URL + 'img/habitica-icon.png',
-          text:     taskType === 'habit' ? 'Habit +/−' : 'Mark Done',
-          callback: async (t) => {
-            const c = await t.card('id', 'name', 'labels');
-            await t.popup({
-              title:  'Habitica Actions',
-              url:    BASE_URL + `powerup.html?view=actions&cardId=${c.id}&labels=${encodeURIComponent(JSON.stringify(c.labels))}`,
-              height: 300,
-            });
-          },
-        });
-      }
-
-      // Always show dashboard button
-      buttons.push({
-        icon:     BASE_URL + 'img/habitica-icon.png',
-        text:     'My Stats',
-        callback: t => t.popup({
-          title:  'Habitica Dashboard',
-          url:    BASE_URL + 'powerup.html?view=dashboard',
-          height: 380,
-        }),
       });
+    },
 
-      return buttons;
-    });
-  },
+    /* ── Card Badges ─────────────────────────────────────────────────────── */
+    'card-badges': function (t) {
+      return t.card('id').then(function (card) {
+        if (!getHabiticaId(card.id)) return [];
+        return [{ text: '⚔ Synced', color: 'green' }];
+      });
+    },
 
-  /* ── Card Badges (small indicators on card face) ──────────────────────── */
-  'card-badges': (t) => {
-    return t.card('id').then(card => {
-      const habiticaId = getHabiticaId(card.id);
-      if (!habiticaId) return [];
+    /* ── Card Detail Badges (shown inside open card) ─────────────────────── */
+    'card-detail-badges': function (t) {
+      return t.card('id', 'labels').then(function (card) {
+        const taskId = getHabiticaId(card.id);
+        if (!taskId) return [];
+
+        const type = taskTypeFromLabels(card.labels);
+        const typeLabel = { todo: 'To-Do', daily: 'Daily', habit: 'Habit' }[type];
+
+        return [
+          { title: 'Habitica Type', text: typeLabel },
+          { title: 'Status', text: 'Synced', color: 'green' },
+        ];
+      });
+    },
+
+    /* ── Board Buttons ───────────────────────────────────────────────────── */
+    'board-buttons': function () {
       return [{
-        text:  'Synced',
-        color: 'green',
+        icon:     ICON,
+        text:     'Habitica',
+        callback: function (t) {
+          return t.popup({
+            title:  'Habitica Stats',
+            url:    BASE_URL + 'powerup.html?view=dashboard',
+            height: 420,
+          });
+        },
       }];
-    });
-  },
+    },
 
-  /* ── Board Buttons ─────────────────────────────────────────────────────── */
-  'board-buttons': () => [{
-    icon:     BASE_URL + 'img/habitica-icon.png',
-    text:     'Habitica',
-    callback: t => t.popup({
-      title:  'Habitica Dashboard',
-      url:    BASE_URL + 'powerup.html?view=dashboard',
-      height: 380,
-    }),
-  }],
+  }); // end initialize
 
-});
+} // end isConnector guard
