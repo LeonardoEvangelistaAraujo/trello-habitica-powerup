@@ -180,18 +180,55 @@ if (isConnector) {
     },
 
     /* ── Board Buttons ───────────────────────────────────────────────────── */
+    // Each stat becomes its own button in the Trello header bar so the values
+    // are always visible on the board without opening any popup.
     'board-buttons': function () {
-      return [{
-        icon:     ICON,
-        text:     'Habitica',
-        callback: function (t) {
-          return t.popup({
-            title:  'Habitica Stats',
-            url:    BASE_URL + 'powerup.html?view=dashboard',
-            height: 420,
-          });
-        },
-      }];
+      // Shared callback: clicking any stat button opens the full dashboard.
+      function openDashboard(t) {
+        return t.popup({
+          title:  'Habitica Stats',
+          url:    BASE_URL + 'powerup.html?view=dashboard',
+          height: 420,
+        });
+      }
+
+      if (!credentialsSet()) {
+        return [{
+          icon:     ICON,
+          text:     'Setup Habitica',
+          callback: function (t) {
+            return t.popup({
+              title:  'Habitica – Setup',
+              url:    BASE_URL + 'powerup.html?view=setup',
+              height: 280,
+            });
+          },
+        }];
+      }
+
+      // Fetch stats then return one button per stat so they render inline.
+      return getUserStats().then(function (user) {
+        const s   = user.stats;
+        const lvl = s.lvl;
+        const hp  = Math.floor(s.hp)  + '/' + s.maxHealth;
+        const xp  = Math.floor(s.exp) + '/' + s.toNextLevel;
+        const gp  = Math.floor(s.gp);
+
+        return [
+          { icon: ICON, text: 'Lv ' + lvl,       callback: openDashboard },
+          { text: '\u2764\uFE0F ' + hp,            callback: openDashboard },
+          { text: '\u2B50 ' + xp,                  callback: openDashboard },
+          { text: '\uD83D\uDCB0 ' + gp,            callback: openDashboard },
+        ];
+      }).catch(function () {
+        // If the API call fails (bad credentials, offline, etc.) show a
+        // single error button so the board isn't broken.
+        return [{
+          icon:     ICON,
+          text:     'Habitica \u26A0\uFE0F',
+          callback: openDashboard,
+        }];
+      });
     },
 
   }); // end initialize
