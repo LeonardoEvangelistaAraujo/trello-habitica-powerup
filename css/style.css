@@ -306,6 +306,81 @@ hr {
 /* ── Hidden ── */
 .hidden { display: none !important; }
 
+/* ── Instructions view ── */
+.instr-step {
+  display: flex;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f1f3;
+}
+
+.instr-num {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #0052cc;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+}
+
+.instr-body {
+  flex: 1;
+}
+
+.instr-body strong {
+  font-size: 13px;
+  color: #172b4d;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.instr-body p {
+  font-size: 12px;
+  color: #5e6c84;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.instr-tip {
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: #fffae6;
+  border-left: 3px solid #ff991f;
+  border-radius: 0 4px 4px 0;
+  font-size: 12px;
+  color: #5e6c84;
+  line-height: 1.5;
+}
+
+.instr-tip strong { color: #172b4d; }
+
+.instr-type-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.instr-type-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12px;
+  color: #5e6c84;
+  line-height: 1.5;
+}
+
+.instr-type-row .badge {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
 /* ── Responsive ── */
 @media (max-width: 360px) {
   .stats-grid { grid-template-columns: 1fr; }

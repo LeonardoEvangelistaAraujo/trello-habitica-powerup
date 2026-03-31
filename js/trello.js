@@ -206,6 +206,14 @@ if (isConnector) {
         }];
       }
 
+      function openInstructions(t) {
+        return t.popup({
+          title:  'How Card Sync Works',
+          url:    BASE_URL + 'powerup.html?view=instructions',
+          height: 540,
+        });
+      }
+
       // Fetch stats then return one button per stat so they render inline.
       return getUserStats().then(function (user) {
         const s   = user.stats;
@@ -219,6 +227,7 @@ if (isConnector) {
           { text: '\u2764\uFE0F ' + hp,            callback: openDashboard },
           { text: '\u2B50 ' + xp,                  callback: openDashboard },
           { text: '\uD83D\uDCB0 ' + gp,            callback: openDashboard },
+          { text: '? How to sync',                 callback: openInstructions },
         ];
       }).catch(function () {
         // If the API call fails (bad credentials, offline, etc.) show a

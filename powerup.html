@@ -33,7 +33,12 @@
   <!-- ══ VIEW: SYNC ════════════════════════════════════════════════════════ -->
   <div id="view-sync" class="hidden">
     <div class="card">
-      <h2>Sync to Habitica</h2>
+      <div class="section-header">
+        <h2>Sync to Habitica</h2>
+        <a href="powerup.html?view=instructions" class="btn btn-ghost btn-sm" style="font-size:12px">
+          ? How it works
+        </a>
+      </div>
       <p style="font-size:13px;color:#172b4d;margin-bottom:12px">
         Card: <strong id="sync-card-name">—</strong>
       </p>
@@ -178,6 +183,89 @@
     </div><!-- /dashboard-content -->
   </div><!-- /view-dashboard -->
 
+  <!-- ══ VIEW: INSTRUCTIONS ═══════════════════════════════════════════════ -->
+  <div id="view-instructions" class="hidden">
+
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+      <h2 style="flex:1;font-size:15px;font-weight:700;color:#172b4d">How Card Sync Works</h2>
+      <span style="font-size:11px;color:#5e6c84">Trello &rarr; Habitica</span>
+    </div>
+
+    <!-- Step 1 -->
+    <div class="instr-step">
+      <div class="instr-num">1</div>
+      <div class="instr-body">
+        <strong>Open any card</strong>
+        <p>Click a Trello card to open it. You'll see a <em>Sync to Habitica</em> button in the card's button bar on the right.</p>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="instr-step">
+      <div class="instr-num">2</div>
+      <div class="instr-body">
+        <strong>Choose a task type</strong>
+        <p>Select <span class="badge badge-todo">To-Do</span>, <span class="badge badge-daily">Daily</span>, or <span class="badge badge-habit">Habit</span> — then click the matching button.</p>
+        <div class="instr-tip">
+          <strong>Tip:</strong> Add a label named <code>TODO</code>, <code>DAILY</code>, or <code>HABIT</code> to the card before clicking Sync and the type will be pre-selected automatically.
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3 -->
+    <div class="instr-step">
+      <div class="instr-num">3</div>
+      <div class="instr-body">
+        <strong>Task is created in Habitica</strong>
+        <p>The card name becomes the task title. The card description becomes the task notes. A green <span class="badge badge-synced">⚔ Synced</span> badge appears on the card face.</p>
+      </div>
+    </div>
+
+    <!-- Step 4 -->
+    <div class="instr-step">
+      <div class="instr-num">4</div>
+      <div class="instr-body">
+        <strong>Act on the synced task</strong>
+        <p>Open the card again. The button now says <em>Mark Done</em> or <em>Habit +/−</em> depending on type:</p>
+        <div class="instr-type-grid">
+          <div class="instr-type-row">
+            <span class="badge badge-todo">To-Do</span>
+            <span>Mark Done &rarr; completes the task in Habitica, earns XP &amp; Gold</span>
+          </div>
+          <div class="instr-type-row">
+            <span class="badge badge-daily">Daily</span>
+            <span>Mark Done &rarr; checks off today's daily, earns XP &amp; Gold</span>
+          </div>
+          <div class="instr-type-row">
+            <span class="badge badge-habit">Habit</span>
+            <span><strong>+</strong> scores positively (XP up) &nbsp;&bull;&nbsp; <strong>−</strong> scores negatively (HP down)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 5 -->
+    <div class="instr-step" style="border-bottom:none;padding-bottom:0">
+      <div class="instr-num">5</div>
+      <div class="instr-body">
+        <strong>Unlink a card</strong>
+        <p>Open the card &rarr; click the action button &rarr; scroll down to <em>Unlink from Habitica</em>. This removes the local mapping only — the Habitica task is kept.</p>
+      </div>
+    </div>
+
+    <hr style="margin:14px 0" />
+
+    <!-- Storage note -->
+    <div class="instr-tip">
+      <strong>Storage:</strong> The link between each Trello card and its Habitica task is stored in your browser's <code>localStorage</code>. It is specific to the browser and device you used to sync. Clearing browser data will remove all mappings.
+    </div>
+
+    <div style="margin-top:14px">
+      <a href="powerup.html?view=setup" class="btn btn-secondary btn-sm">&#9881; Settings</a>
+    </div>
+
+  </div><!-- /view-instructions -->
+
 </div><!-- /container -->
 <div id="notification"></div>
 
@@ -197,7 +285,7 @@
   // Reveal the correct view panel. Runs after all scripts have loaded.
   (function () {
     const view   = new URLSearchParams(window.location.search).get('view') || '';
-    const valid  = ['setup', 'sync', 'actions', 'dashboard'];
+    const valid  = ['setup', 'sync', 'actions', 'dashboard', 'instructions'];
     const target = valid.includes(view) ? view : null;
     if (target) {
       const el = document.getElementById('view-' + target);
